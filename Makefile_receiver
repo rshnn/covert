@@ -1,0 +1,29 @@
+
+CFLAGS=-std=c++11 -I /usr/local
+CC=g++
+
+
+TARGETS=receiver
+UTILS=util.o 
+
+all: $(TARGETS)
+
+$(UTILS): %.o: %.cpp %.hpp
+	$(CC) $(CFLAGS) -c $<
+
+%.o: %.cpp util.hpp
+	$(CC) $(CFLAGS)  -c $< 
+
+
+$(TARGETS): %:%.o util.o
+	$(CC) $(CFLAGS) $^ -o $@
+
+
+
+run:
+	./receiver
+
+.PHONY:	clean
+
+clean:
+	rm *.o $(HELPERS) $(TARGETS) 
