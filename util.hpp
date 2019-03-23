@@ -13,6 +13,7 @@
 #include <cstring> 
 #include <string> 
 #include <iostream>
+#include <unistd.h>
 
 using namespace std; 
 
@@ -23,6 +24,7 @@ using namespace std;
 #define ADDR_PTR uint64_t 
 #define CYCLES uint32_t
 
+#define PERIOD 150
 
 
 // CONSTANTS FOR DRAMAMINE 
