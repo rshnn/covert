@@ -1,6 +1,4 @@
 
-using namespace std; 
-
 #include"util.hpp"
 
 
@@ -9,6 +7,8 @@ class ConfigSender
 	public:
 	bool debug_mode; 
 	double period;  // in microseconds 
+	char* buffer; 
+	list<ADDR_PTR> eviction_list; 
 
 	ConfigSender(bool debug_mode, double period)
 	{
@@ -18,6 +18,80 @@ class ConfigSender
 };
 
 
+/*
+	Adds all addresses in buffer to the eviction list.
+		Buffer is the size of the L3 cache.    
+*/
+void build_eviction_set(ConfigSender* configuration)
+{
+
+	int line_offsets = log2(CACHE_LINESIZE); 
+	int sets = log2(CACHE_L3_SETS);
+
+	// Create buffer at least as large as the L3 cache 
+	// TODO what is c? 
+	int buffer_size = CACHE_L3_ASSOC * exp2(line_offsets + sets);
+	configuration->buffer = (char*)malloc(buffer_size);
+
+	for(int i=0; i < CACHE_L3_SETS ; i++)
+	{
+    	for(int j=0; j < CACHE_L3_ASSOC; j++)
+    	{
+    		int idx = (int)(i * exp2(line_offsets)) + (int)(j * exp2(line_offsets + sets));
+	    	ADDR_PTR addr = (ADDR_PTR) &(configuration->buffer[idx]);
+    		
+    		configuration->eviction_list.push_back(addr); 
+    	}
+
+	}
+
+}
+
+
+
+
+/*
+	Send a zero bit to the receiver through the covert channel.  
+		To send zero, the cache is NOT flushed.  
+		Stalls for configuration.period microseconds.  
+*/
+void send_zero(ConfigSender* configuration)
+{
+	clock_t start; 
+	start = clock();
+
+	while(clock() - start < configuration->period){
+		// do nothing 
+	}
+
+}
+
+
+/*
+	Send a one bit to the receiver through the covert channel.  
+		To send one, the entire LLC cache is flushed.  
+		Flush until configuration.period microseconds has passed.  
+*/
+void send_one(ConfigSender* configuration)
+{
+	// list<ADDR_PTR> evict_me = configuration->eviction_list; 
+	clock_t start; 
+	start = clock();
+
+	while((clock() - start) < configuration->period)
+	{	
+		list<ADDR_PTR>::iterator i; 
+	
+		for(i=configuration->eviction_list.begin(); 
+			i != configuration->eviction_list.end(); 
+			i++)
+		{
+			ADDR_PTR address = (ADDR_PTR) *i; 
+			CLFLUSH(address);
+		}
+	}
+
+}
 
 /*
 	Parse command line input flags.  
@@ -55,6 +129,7 @@ void parse_input_flags(ConfigSender* configuration, int argc, char** argv)
 
 
 
+
 int main(int argc, char **argv)
 {
 	// setup 
@@ -62,16 +137,18 @@ int main(int argc, char **argv)
 	ConfigSender configuration = ConfigSender(true, PERIOD);
 	parse_input_flags(&configuration, argc, argv);  
 
+	build_eviction_set(&configuration); 
 
-	printf("Please type a message.\n");
+
 
 	bool sending = true;
 	while (sending) {
 		char text_buf[128];
+		printf("Please type a message.\n");
 		fgets(text_buf, sizeof(text_buf), stdin);
 	
 		// Turn buffer into binary (8 bits per character) 
-		char* binary_payload = string_to_binary(text_buf); 
+		char* binary_payload = convert_to_binary(text_buf); 
 
 		if(configuration.debug_mode)
 			cout << "binary message\n" << binary_payload << endl; 
@@ -92,9 +169,14 @@ int main(int argc, char **argv)
         	if(binary_payload[i] == '1')
         	{
         		// flush LLC
-
+        		send_one(&configuration);
+        		if(configuration.debug_mode)
+	    			cout << "Sent 1." << endl;
         	}else{
-        		// wait 
+        		// do nothing 
+        		send_zero(&configuration);
+        		if(configuration.debug_mode)
+        			cout << "Sent 0." << endl;
         	}
 
         } 

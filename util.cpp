@@ -33,36 +33,14 @@ void CLFLUSH(ADDR_PTR addr)
 }
 
 
-/*
-    Returns 8 character binary representation of character 
-    Returns character array in heap space.  
-*/
-char* character_to_binary(char c)
-{
-	char* binary = (char*) malloc(8 * sizeof(char)); 
-
-    for(int i=7; i>=0; --i){
-        if(c & (1 << i)) 
-        {
-            strcat(binary, "1");
-        } else {
-            strcat(binary, "0");
-        }
-
-    }
-    return binary; 
-}
-
-
 
 /*
     Returns a binary representation of input string 
     Returns pointer to character array in heap space. 
 */
-char* string_to_binary(string input)
+char* convert_to_binary(char* input)
 {
-
-    size_t length = input.length();
+    size_t length = strlen(input) - 1;
 
     char* output = (char*) malloc(length * sizeof(char) + 1);   
     output[0] = '\0';
@@ -70,7 +48,15 @@ char* string_to_binary(string input)
     for(int i=0; i<length; ++i)
     {
         char c = input[i];
-        strcat(output, character_to_binary(c));
+
+        for(int j=7; j>=0; --j){
+            if(c & (1 << j)) 
+            {
+                strcat(output, "1");
+            } else {
+                strcat(output, "0");
+            }
+        }
     }
 
     return output; 

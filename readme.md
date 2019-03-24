@@ -31,3 +31,27 @@ LEVEL4_CACHE_SIZE                  0
 LEVEL4_CACHE_ASSOC                 0
 LEVEL4_CACHE_LINESIZE              0
 ```
+
+
+
+
+
+    // evict_list.push_back((ADDR_PTR) 10);
+    // evict_list.push_back((ADDR_PTR) 11);
+    // evict_list.push_back((ADDR_PTR) 12);
+
+
+
+    list<ADDR_PTR>::iterator i; 
+    for (i=configuration->eviction_list.begin(); 
+        i!= configuration->eviction_list.end(); i++)
+    {
+        cout << *i << endl; 
+    }
+
+    for (i=configuration->eviction_list.begin(); 
+        i!= configuration->eviction_list.end(); i++)
+    {
+        cout << *i << endl; 
+    }
+

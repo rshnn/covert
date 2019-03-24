@@ -11,9 +11,10 @@
 #include <inttypes.h>
 #include <time.h>
 #include <cstring> 
-#include <string> 
 #include <iostream>
 #include <unistd.h>
+#include <list>
+#include <math.h>
 
 using namespace std; 
 
@@ -59,8 +60,6 @@ CYCLES measure_one_block_access_time(ADDR_PTR addr);
 
 void CLFLUSH(ADDR_PTR addr);
 
-char* character_to_binary(char c);
-
-char* string_to_binary(string input);
+char* convert_to_binary(char* input);
 
 #endif
