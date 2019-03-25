@@ -22,7 +22,7 @@ class ConfigSender
 	Adds all addresses in buffer to the eviction list.
 		Buffer is the size of the L3 cache.    
 */
-void build_eviction_set(ConfigSender* configuration)
+void build_eviction_list(ConfigSender* configuration)
 {
 
 	int line_offsets = log2(CACHE_LINESIZE); 
@@ -42,11 +42,8 @@ void build_eviction_set(ConfigSender* configuration)
     		
     		configuration->eviction_list.push_back(addr); 
     	}
-
 	}
-
 }
-
 
 
 
@@ -137,7 +134,7 @@ int main(int argc, char **argv)
 	ConfigSender configuration = ConfigSender(true, PERIOD);
 	parse_input_flags(&configuration, argc, argv);  
 
-	build_eviction_set(&configuration); 
+	build_eviction_list(&configuration); 
 
 
 
@@ -180,9 +177,6 @@ int main(int argc, char **argv)
         	}
 
         } 
-
-
-
 
 
         // STOP THE CLOCK! 
