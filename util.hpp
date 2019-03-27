@@ -60,6 +60,10 @@ CYCLES measure_one_block_access_time(ADDR_PTR addr);
 
 void CLFLUSH(ADDR_PTR addr);
 
+uint64_t RDTSC();
+
+uint64_t cache_set_index(ADDR_PTR addr);
+
 char* convert_to_binary(char* input);
 
 #endif

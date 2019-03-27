@@ -39,8 +39,11 @@ void build_eviction_list(ConfigSender* configuration)
     	{
     		int idx = (int)(i * exp2(line_offsets)) + (int)(j * exp2(line_offsets + sets));
 	    	ADDR_PTR addr = (ADDR_PTR) &(configuration->buffer[idx]);
-    		
-    		configuration->eviction_list.push_back(addr); 
+
+			// Focus fire on a single cache set.  In particular, cache set 0.  
+	        if (cache_set_index(addr) == 0x0) {
+	    		configuration->eviction_list.push_back(addr); 
+			}	
     	}
 	}
 }
@@ -54,13 +57,15 @@ void build_eviction_list(ConfigSender* configuration)
 */
 void send_zero(ConfigSender* configuration)
 {
-	clock_t start; 
-	start = clock();
+	
+	uint64_t start = RDTSC();
+	// clock_t start; 
+	// start = clock();
 
-	while(clock() - start < configuration->period){
+
+	while(RDTSC() - start < configuration->period){
 		// do nothing 
 	}
-
 }
 
 
@@ -71,11 +76,12 @@ void send_zero(ConfigSender* configuration)
 */
 void send_one(ConfigSender* configuration)
 {
-	// list<ADDR_PTR> evict_me = configuration->eviction_list; 
-	clock_t start; 
-	start = clock();
 
-	while((clock() - start) < configuration->period)
+	uint64_t start = RDTSC();
+	// clock_t start; 
+	// start = clock();
+
+	while((RDTSC() - start) < configuration->period)
 	{	
 		list<ADDR_PTR>::iterator i; 
 	
@@ -87,7 +93,6 @@ void send_one(ConfigSender* configuration)
 			CLFLUSH(address);
 		}
 	}
-
 }
 
 /*
@@ -173,14 +178,18 @@ int main(int argc, char **argv)
         	if(binary_payload[i] == '1')
         	{
         		// flush LLC
+        		if(configuration.debug_mode)
+	    			cout << RDTSC() << " Sending 1." << endl;
         		send_one(&configuration);
         		if(configuration.debug_mode)
-	    			cout << "Sent 1." << endl;
+	    			cout <<  RDTSC()  << " Sent 1." << endl;
         	}else{
         		// do nothing 
+        		if(configuration.debug_mode)
+	    			cout <<  RDTSC() << " Sending 0." << endl;
         		send_zero(&configuration);
         		if(configuration.debug_mode)
-        			cout << "Sent 0." << endl;
+        			cout <<  RDTSC() << " Sent 0." << endl;
         	}
 
         } 

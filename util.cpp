@@ -24,6 +24,17 @@ CYCLES measure_one_block_access_time(ADDR_PTR addr)
 
 
 
+uint64_t RDTSC()
+{
+    unsigned int lo,hi;
+    __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
+    return ((uint64_t)hi << 32) | lo;
+}
+ 
+
+
+
+
 /*
     Flushes all caches of the input address.  
 */
@@ -31,6 +42,18 @@ void CLFLUSH(ADDR_PTR addr)
 {
     asm volatile ("clflush (%0)"::"r"(addr));
 }
+
+
+
+/*
+ * Returns the 10 bits cache set index of a given address.
+ */
+uint64_t cache_set_index(ADDR_PTR addr)
+{
+    uint64_t mask = ((uint64_t) 1 << 16) - 1;
+    return (addr & mask) >> 6;
+}
+
 
 
 

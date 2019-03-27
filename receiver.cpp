@@ -49,8 +49,11 @@ void build_probe_list(ConfigReceiver* configuration)
 	{
 		int idx = (int)exp2(line_offsets + sets) * i;
 		ADDR_PTR addr = (ADDR_PTR) &(configuration->buffer[idx]);
-	
-		configuration->probe_list.push_back(addr);
+
+		// Focus fire on a single cache set.  In particular, cache set 0.  
+        if (cache_set_index(addr) == 0x0) {
+			configuration->probe_list.push_back(addr);
+		}	
 	}
 }
 
@@ -77,22 +80,26 @@ int listen_for_bit(ConfigReceiver* configuration)
 
 	avg = (double) sum / (double) configuration->probe_list.size();
 
+	cout << "at cycle" << RDTSC() << " avg cycles " << avg << endl; 
+
 	if(avg >= 100)
 	{
 		return 1; 
-		cout << "   its a one!" << endl;
 	}else
 	{
 		return 0;
 	}
 
-
-	// cout << "avg cycles " << avg << endl; 
-
-
 } 
 
 
+
+void sync(ConfigReceiver* configuration)
+{
+
+	// cout << clock() << endl;
+
+}
 
 
 
@@ -140,6 +147,9 @@ int main(int argc, char **argv)
 
 	build_probe_list(&configuration);
 
+	cout << "thats it " << RDTSC() << endl; 
+
+
 	if(configuration.debug_mode)
 		configuration.print_probe_list();
 	
@@ -148,6 +158,11 @@ int main(int argc, char **argv)
 	char text_buf[2];
 	fgets(text_buf, sizeof(text_buf), stdin);
 
+
+	// sync(&configuration);
+
+
+
 	printf("Receiver now listening.\n");
 	bool listening = true;
 	while (listening) {
@@ -155,7 +170,7 @@ int main(int argc, char **argv)
 
 		/*testing*/
 		int bit = listen_for_bit(&configuration);
-		cout<< bit << endl;
+		cout<< bit << endl;	
 		sleep(configuration.period * 100);
 
 		// Recognize initiate sequence & sync up with sender   
