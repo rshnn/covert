@@ -156,7 +156,14 @@ int main(int argc, char **argv)
 
 
 
-        // send an initiate sequence 
+        // send an initiate sequence  110011
+        send_one(&configuration);
+        send_one(&configuration);
+        send_zero(&configuration);
+        send_zero(&configuration);
+        send_one(&configuration);
+        send_one(&configuration);
+
 
 
         // send payload 

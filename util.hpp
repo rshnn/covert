@@ -25,7 +25,7 @@ using namespace std;
 #define ADDR_PTR uint64_t 
 #define CYCLES uint32_t
 
-#define PERIOD 150
+#define PERIOD 300
 
 
 // CONSTANTS FOR DRAMAMINE 

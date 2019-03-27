@@ -62,3 +62,7 @@ char* convert_to_binary(char* input)
     return output; 
 }
 
+
+// char* convert_from_binary()
+// { 
+// }

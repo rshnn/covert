@@ -1,5 +1,5 @@
 
-CFLAGS=-std=c++11 -I /usr/local
+CFLAGS=-std=c++11 -g -I /usr/local
 CC=g++
 
 
