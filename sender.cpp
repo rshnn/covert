@@ -15,6 +15,21 @@ class ConfigSender
 		debug_mode = debug_mode; 
 		period = period; 
 	}
+
+
+	void print_eviction_list()
+	{
+		
+		cout << "Dumping eviction list.." << endl; 
+		list<ADDR_PTR>::iterator i; 
+		for(i = eviction_list.begin();
+			i != eviction_list.end(); 
+			i++)
+		{
+			cout << *i << endl;
+		}
+	}
+
 };
 
 
@@ -140,7 +155,9 @@ int main(int argc, char **argv)
 	parse_input_flags(&configuration, argc, argv);  
 
 	build_eviction_list(&configuration); 
-
+	
+	if(configuration.debug_mode)
+		configuration.print_eviction_list(); 
 
 
 	bool sending = true;

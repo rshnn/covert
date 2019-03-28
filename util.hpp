@@ -34,7 +34,7 @@ const int CACHE_LINESIZE = 64;
 // This is the L1 cache for data only.  Does not include instructions 
 const int CACHE_L1_SIZE = 32768; 
 const int CACHE_L1_ASSOC = 8;
-const int CACHE_L1_SETS = (CACHE_L1_SIZE / CACHE_LINESIZE) / CACHE_L1_ASSOC;
+const int CACHE_L1_SETS = (CACHE_L1_SIZE / CACHE_LINESIZE) / CACHE_L1_ASSOC; //64
 
 const int CACHE_L3_SIZE = 4194304; 
 const int CACHE_L3_ASSOC = 16;

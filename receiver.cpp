@@ -39,13 +39,14 @@ void build_probe_list(ConfigReceiver* configuration)
 
 	int line_offsets = log2(CACHE_LINESIZE);
 	int sets = log2(CACHE_L1_SETS);
+	int c = 2;  		// constant multiplier 
 
 	// Create a buffer of at least as large as the L1 cache.
-	int buffer_size = CACHE_L1_ASSOC * exp2(line_offsets + sets);
+	int buffer_size = c * CACHE_L1_ASSOC * exp2(line_offsets + sets);
 
-	configuration->buffer = (char*) malloc(buffer_size);
+	configuration->buffer = (char*) malloc(4 * buffer_size);
 
-	for(int i=0; i < CACHE_L1_ASSOC; i++)
+	for(int i=0; i < CACHE_L1_ASSOC * c; i++)
 	{
 		int idx = (int)exp2(line_offsets + sets) * i;
 		ADDR_PTR addr = (ADDR_PTR) &(configuration->buffer[idx]);
@@ -80,7 +81,7 @@ int listen_for_bit(ConfigReceiver* configuration)
 
 	avg = (double) sum / (double) configuration->probe_list.size();
 
-	cout << "at cycle" << RDTSC() << " avg cycles " << avg << endl; 
+	// cout << "at cycle" << RDTSC() << " avg cycles " << avg << endl; 
 
 	if(avg >= 100)
 	{
@@ -147,8 +148,6 @@ int main(int argc, char **argv)
 
 	build_probe_list(&configuration);
 
-	cout << "thats it " << RDTSC() << endl; 
-
 
 	if(configuration.debug_mode)
 		configuration.print_probe_list();
@@ -170,7 +169,7 @@ int main(int argc, char **argv)
 
 		/*testing*/
 		int bit = listen_for_bit(&configuration);
-		cout<< bit << endl;	
+		cout<< bit << " at " << RDTSC() << endl;	
 		sleep(configuration.period * 100);
 
 		// Recognize initiate sequence & sync up with sender   

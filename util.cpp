@@ -33,8 +33,6 @@ uint64_t RDTSC()
  
 
 
-
-
 /*
     Flushes all caches of the input address.  
 */
