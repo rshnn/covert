@@ -7,7 +7,6 @@ class ConfigSender
 	public:
 	bool debug_mode; 
 	uint64_t period;  // in microseconds 
-	uint64_t interval;  //in cycles 
 	char* buffer; 
 	list<ADDR_PTR> eviction_list; 
 
@@ -68,12 +67,11 @@ void build_eviction_list(ConfigSender* configuration)
 void send_zero(ConfigSender* configuration)
 {
 	
-	uint64_t start = RDTSC();
-	// clock_t start; 
-	// start = clock();
+	clock_t start; 
+	start = clock();
 
 
-	while(RDTSC() - start < configuration->period){
+	while(clock() - start < configuration->period){
 		// do nothing 
 	}
 }
@@ -88,22 +86,12 @@ void send_zero(ConfigSender* configuration)
 void send_one(ConfigSender* configuration)
 {
 
-	// while((RDTSC() - start) < configuration->period)
-	
-	while(1)
-	{
-		if(RDTSC() % configuration->interval == 0)
-			break; 
-	}
+
+	clock_t start = clock();
+	clock_t dt = clock() - start; 
 	
 
-
-	uint64_t start = RDTSC();
-	uint64_t dt = RDTSC() - start; 
-	std::cout << "sending 1 " << start << std::endl; 
-	
-	// Sender flushes for 90% of the interval 
-	while(dt < configuration->interval * 0.9)  
+	while(dt < configuration->period)  
 	{	
 				
 		list<ADDR_PTR>::iterator i; 
@@ -116,13 +104,9 @@ void send_one(ConfigSender* configuration)
 			CLFLUSH(address);
 		}
 
-		dt = RDTSC() - start; 
+		dt = clock() - start; 
 	}
-
-	std::cout << "done sending 1 " << RDTSC() << std::endl; 
-
-
-
+ 
 }
 
 /*
@@ -168,7 +152,6 @@ int main(int argc, char **argv)
 	clock_t begin, end; 
 	ConfigSender configuration = ConfigSender();
 	configuration.debug_mode = true; 
-	configuration.interval = INTERVAL; 
 	configuration.period = PERIOD; 
 
 

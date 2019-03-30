@@ -6,9 +6,13 @@ class ConfigReceiver
 	public:
 	bool debug_mode; 
 	uint64_t period;  // in microseconds 
-	uint64_t interval; //in cycles 
 	list<ADDR_PTR> probe_list; 
 	char* buffer; 
+	int decision_boundary; 
+
+	// 0 = seek more 
+	// 1 = listening mode 
+	int mode; 
 
 	
 	void print_probe_list()
@@ -55,24 +59,37 @@ void build_probe_list(ConfigReceiver* configuration)
 
 
 
-int listen_for_bit(ConfigReceiver* configuration)
+void time_correction(ConfigReceiver* configuration, int misses, int total)
 {
-	int sum = 0;
-	int avg = 0;
-	int access_count = 0;
+	clock_t start = clock();
 
-	list<ADDR_PTR>::iterator i;
-		
-	
-	while(1)
+	// (TUNE) correction parameter:  hit expection 
+	double H = (double) total * 0.8;
+	double out_of_sync = (1 - misses / H);
+
+	double pause_time = configuration->period * out_of_sync;
+
+	while((clock() - start) < pause_time)
 	{
-		if(RDTSC() % configuration->interval == 0)//< configuration->interval/10)
-			break; 
+		// do nothing
 	}
 
-	uint64_t start = RDTSC();
-	uint64_t dt = RDTSC() - start; 
-	// std::cout << "\tlistening at " << start << std::endl; 
+	return; 
+}
+
+
+
+int listen_for_bit(ConfigReceiver* configuration)
+{
+	int access_count = 0;
+	int cache_hit = 0;
+	int cache_miss = 0;
+	double hit_ratio = -1; 
+
+	list<ADDR_PTR>::iterator i;
+
+	clock_t start = clock();
+	clock_t dt = clock() - start; 
 
 
 	while(dt < configuration->period){
@@ -85,45 +102,51 @@ int listen_for_bit(ConfigReceiver* configuration)
 			ADDR_PTR addr = (ADDR_PTR) *i;
 			CYCLES x = measure_one_block_access_time(addr);
 
-			if(x > 1000)
-				continue; 
+			// if(x > 1000)
+			// 	continue; 
 
-			sum = sum + x;
 			access_count++; 
 
+			if(x <= configuration->decision_boundary)
+				cache_hit++;
+			else
+				cache_miss++;
 
-			uint64_t time_after_check = RDTSC(); 
-			uint64_t sleep_time = RDTSC() - time_after_check; 
-			while(sleep_time < configuration->period*0.01)
-			{
-				sleep_time = RDTSC() - time_after_check; 
-			}
-
-
+			// (TUNE) lag time for sender to flush L3 
+            for(int j = 0; 
+            	j < (configuration->period * 0.2) &&
+                (clock() - start) < configuration->period; 
+                j++) 
+            {
+            	// do nothing 
+            }
 
 		}
-		dt = RDTSC() - start; 
+		dt = clock() - start; 
 	}
 
-
-	avg = (double) sum / (double) access_count;
-
-	while(1){
-		if(RDTSC() - start < configuration->interval*0.9)
-			break;
-	}
-
-
-
-	if(avg >= 100)
+	// Apply time correction if in seek mode. 
+	if(configuration->mode == 0)
 	{
-		// cout << "\ttotal " << sum << " count " << access_count << endl; 
-		cout << "\t\tat cycle " << start << " avg cycles " << avg  << " " << sum << " " << access_count << endl; 
-		return 1; 
-	}else
-	{
-		return 0;
+		// (TUNE) Percent of misses in seek mode to enact time_correction.  
+		if(cache_miss > (access_count*0.13))
+			time_correction(configuration, cache_miss, access_count);
+
+		// (TUNE) Percent of hits in seek mode to return 1.  Relax the threshold.  
+		if(cache_hit > ((double) access_count * 0.9))
+			return 1; 
+		else
+			return 0; 
 	}
+
+
+
+	hit_ratio = (double) cache_hit / (double) access_count; 
+	// (TUNE) ratio of total 
+	if(hit_ratio > 0.5)
+		return 1;
+	else
+		return 0; 
 
 } 
 
@@ -171,9 +194,9 @@ int main(int argc, char **argv)
 	// setup 
 	ConfigReceiver configuration = ConfigReceiver();
 	configuration.debug_mode = true; 
-	configuration.interval = INTERVAL; 
 	configuration.period = PERIOD; 
-
+	configuration.decision_boundary = 160; 
+	configuration.mode = 0;
 
 	parse_input_flags(&configuration, argc, argv); 
 
@@ -189,33 +212,50 @@ int main(int argc, char **argv)
 	fgets(text_buf, sizeof(text_buf), stdin);
 
 
-
+	int bit = -1;
 
 	printf("Receiver now listening.\n");
 	bool listening = true;
 	while (listening) {
 
 
-		/*testing*/
-		int bit = listen_for_bit(&configuration);
-		// cout<< bit << " at " << RDTSC() << endl;	
+		bit = listen_for_bit(&configuration);
 
 		// Recognize initiate sequence & sync up with sender   
+		int bit = listen_for_bit(&configuration);
+
+		if(bit == 1)
+		{
+			configuration.mode = 1;
+			bit = listen_for_bit(&configuration);
+			if(bit == 1)
+			{
+				bit = listen_for_bit(&configuration);
+				if(bit == 0)
+				{
+					bit = listen_for_bit(&configuration);
+					if(bit == 0)
+					{
+						bit = listen_for_bit(&configuration);
+						if(bit == 1)
+						{
+							bit = listen_for_bit(&configuration);
+							if(bit == 1)
+							{
+								cout << " Found the sequence " << endl;
+							}
+						}
+					}
+				}
+			}	
+		}
 
 
 
 
-
-		// if(listen_for_init())
-		// {
-		// 	// Start listening for bits  
 			
-		// }
 
-
-			
-
-
+		configuration.mode = 0; 
 	}
 
 	printf("Receiver finished.\n");
