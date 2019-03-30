@@ -5,17 +5,12 @@ class ConfigReceiver
 {
 	public:
 	bool debug_mode; 
-	double period;  // in microseconds 
+	uint64_t period;  // in microseconds 
+	uint64_t interval; //in cycles 
 	list<ADDR_PTR> probe_list; 
 	char* buffer; 
 
-	ConfigReceiver(bool debug_mode, double period)
-	{
-		debug_mode = debug_mode; 
-		period = period; 
-	}
-
-
+	
 	void print_probe_list()
 	{
 		
@@ -64,27 +59,66 @@ int listen_for_bit(ConfigReceiver* configuration)
 {
 	int sum = 0;
 	int avg = 0;
+	int access_count = 0;
 
 	list<ADDR_PTR>::iterator i;
-	for(i=configuration->probe_list.begin(); 
-		i != configuration->probe_list.end();
-		i++)
+		
+	
+	while(1)
 	{
-
-		ADDR_PTR addr = (ADDR_PTR) *i;
-		CYCLES x = measure_one_block_access_time(addr);
-
-		sum = sum + x;
-
-		// cout << "cycles for " << addr << " " << x << endl; 
+		if(RDTSC() % configuration->interval == 0)//< configuration->interval/10)
+			break; 
 	}
 
-	avg = (double) sum / (double) configuration->probe_list.size();
+	uint64_t start = RDTSC();
+	uint64_t dt = RDTSC() - start; 
+	// std::cout << "\tlistening at " << start << std::endl; 
 
-	// cout << "at cycle" << RDTSC() << " avg cycles " << avg << endl; 
+
+	while(dt < configuration->period){
+
+		for(i=configuration->probe_list.begin(); 
+			i != configuration->probe_list.end();
+			i++)
+		{
+
+			ADDR_PTR addr = (ADDR_PTR) *i;
+			CYCLES x = measure_one_block_access_time(addr);
+
+			if(x > 1000)
+				continue; 
+
+			sum = sum + x;
+			access_count++; 
+
+
+			uint64_t time_after_check = RDTSC(); 
+			uint64_t sleep_time = RDTSC() - time_after_check; 
+			while(sleep_time < configuration->period*0.01)
+			{
+				sleep_time = RDTSC() - time_after_check; 
+			}
+
+
+
+		}
+		dt = RDTSC() - start; 
+	}
+
+
+	avg = (double) sum / (double) access_count;
+
+	while(1){
+		if(RDTSC() - start < configuration->interval*0.9)
+			break;
+	}
+
+
 
 	if(avg >= 100)
 	{
+		// cout << "\ttotal " << sum << " count " << access_count << endl; 
+		cout << "\t\tat cycle " << start << " avg cycles " << avg  << " " << sum << " " << access_count << endl; 
 		return 1; 
 	}else
 	{
@@ -93,14 +127,6 @@ int listen_for_bit(ConfigReceiver* configuration)
 
 } 
 
-
-
-void sync(ConfigReceiver* configuration)
-{
-
-	// cout << clock() << endl;
-
-}
 
 
 
@@ -143,7 +169,12 @@ void parse_input_flags(ConfigReceiver* configuration, int argc, char** argv)
 int main(int argc, char **argv)
 {
 	// setup 
-	ConfigReceiver configuration = ConfigReceiver(true, PERIOD);
+	ConfigReceiver configuration = ConfigReceiver();
+	configuration.debug_mode = true; 
+	configuration.interval = INTERVAL; 
+	configuration.period = PERIOD; 
+
+
 	parse_input_flags(&configuration, argc, argv); 
 
 	build_probe_list(&configuration);
@@ -158,8 +189,6 @@ int main(int argc, char **argv)
 	fgets(text_buf, sizeof(text_buf), stdin);
 
 
-	// sync(&configuration);
-
 
 
 	printf("Receiver now listening.\n");
@@ -169,10 +198,11 @@ int main(int argc, char **argv)
 
 		/*testing*/
 		int bit = listen_for_bit(&configuration);
-		cout<< bit << " at " << RDTSC() << endl;	
-		sleep(configuration.period * 100);
+		// cout<< bit << " at " << RDTSC() << endl;	
 
 		// Recognize initiate sequence & sync up with sender   
+
+
 
 
 

@@ -1,20 +1,15 @@
 
 #include"util.hpp"
-
+using namespace std; 
 
 class ConfigSender
 {
 	public:
 	bool debug_mode; 
-	double period;  // in microseconds 
+	uint64_t period;  // in microseconds 
+	uint64_t interval;  //in cycles 
 	char* buffer; 
 	list<ADDR_PTR> eviction_list; 
-
-	ConfigSender(bool debug_mode, double period)
-	{
-		debug_mode = debug_mode; 
-		period = period; 
-	}
 
 
 	void print_eviction_list()
@@ -46,7 +41,7 @@ void build_eviction_list(ConfigSender* configuration)
 	// Create buffer at least as large as the L3 cache 
 	// TODO what is c? 
 	int buffer_size = CACHE_L3_ASSOC * exp2(line_offsets + sets);
-	configuration->buffer = (char*)malloc(buffer_size);
+	configuration->buffer = (char*) malloc(buffer_size);
 
 	for(int i=0; i < CACHE_L3_SETS ; i++)
 	{
@@ -84,6 +79,7 @@ void send_zero(ConfigSender* configuration)
 }
 
 
+
 /*
 	Send a one bit to the receiver through the covert channel.  
 		To send one, the entire LLC cache is flushed.  
@@ -92,12 +88,24 @@ void send_zero(ConfigSender* configuration)
 void send_one(ConfigSender* configuration)
 {
 
-	uint64_t start = RDTSC();
-	// clock_t start; 
-	// start = clock();
+	// while((RDTSC() - start) < configuration->period)
+	
+	while(1)
+	{
+		if(RDTSC() % configuration->interval == 0)
+			break; 
+	}
+	
 
-	while((RDTSC() - start) < configuration->period)
+
+	uint64_t start = RDTSC();
+	uint64_t dt = RDTSC() - start; 
+	std::cout << "sending 1 " << start << std::endl; 
+	
+	// Sender flushes for 90% of the interval 
+	while(dt < configuration->interval * 0.9)  
 	{	
+				
 		list<ADDR_PTR>::iterator i; 
 	
 		for(i=configuration->eviction_list.begin(); 
@@ -107,7 +115,14 @@ void send_one(ConfigSender* configuration)
 			ADDR_PTR address = (ADDR_PTR) *i; 
 			CLFLUSH(address);
 		}
+
+		dt = RDTSC() - start; 
 	}
+
+	std::cout << "done sending 1 " << RDTSC() << std::endl; 
+
+
+
 }
 
 /*
@@ -151,7 +166,12 @@ int main(int argc, char **argv)
 {
 	// setup 
 	clock_t begin, end; 
-	ConfigSender configuration = ConfigSender(true, PERIOD);
+	ConfigSender configuration = ConfigSender();
+	configuration.debug_mode = true; 
+	configuration.interval = INTERVAL; 
+	configuration.period = PERIOD; 
+
+
 	parse_input_flags(&configuration, argc, argv);  
 
 	build_eviction_list(&configuration); 
@@ -195,18 +215,18 @@ int main(int argc, char **argv)
         	if(binary_payload[i] == '1')
         	{
         		// flush LLC
-        		if(configuration.debug_mode)
-	    			cout << RDTSC() << " Sending 1." << endl;
+        // 		if(configuration.debug_mode)
+	    			// cout << RDTSC() << " Sending 1." << endl;
         		send_one(&configuration);
-        		if(configuration.debug_mode)
-	    			cout <<  RDTSC()  << " Sent 1." << endl;
+        		// if(configuration.debug_mode)
+	    			// cout <<  RDTSC()  << " Sent 1." << endl;
         	}else{
         		// do nothing 
-        		if(configuration.debug_mode)
-	    			cout <<  RDTSC() << " Sending 0." << endl;
+        // 		if(configuration.debug_mode)
+	    			// cout <<  RDTSC() << " Sending 0." << endl;
         		send_zero(&configuration);
-        		if(configuration.debug_mode)
-        			cout <<  RDTSC() << " Sent 0." << endl;
+        		// if(configuration.debug_mode)
+        		// 	cout <<  RDTSC() << " Sent 0." << endl;
         	}
 
         } 
