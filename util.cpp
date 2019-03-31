@@ -80,10 +80,34 @@ char* convert_to_binary(char* input)
         }
     }
 
+    strcat(output, "00000000");
+
     return output; 
 }
 
 
-// char* convert_from_binary()
-// { 
-// }
+char* convert_from_binary(char* bitstring, int bitstring_size)
+{ 
+    int i;
+    int num_chars = (int)bitstring_size / 8; 
+    char* message = (char*) malloc(num_chars);
+
+
+    // char* temp = bitstring; 
+    int idx = 0;
+    char eight_bits[8];
+
+    for(i=0; i<num_chars-1; i++)
+    {
+        strncpy(eight_bits, &bitstring[idx], 8);
+        char character = strtol(eight_bits, 0, 2);
+
+        message[i] = character; 
+        idx = idx + 8; 
+
+    }
+
+    message[num_chars] = '\0';
+
+    return message; 
+}

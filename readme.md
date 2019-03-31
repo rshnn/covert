@@ -55,3 +55,6 @@ LEVEL4_CACHE_LINESIZE              0
         cout << *i << endl; 
     }
 
+
+
+do not put listeners into subroutines.  messes up timings 

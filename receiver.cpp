@@ -10,8 +10,9 @@ class ConfigReceiver
 	char* buffer; 
 	int decision_boundary; 
 
-	// 0 = seek more 
-	// 1 = listening mode 
+	// 0 = seeking   
+	// 1 = listening to init
+	// 2 = reading message  
 	int mode; 
 
 	
@@ -63,8 +64,8 @@ void time_correction(ConfigReceiver* configuration, int misses, int total)
 {
 	clock_t start = clock();
 
-	// (TUNE) correction parameter:  hit expection 
-	double H = (double) total * 0.8;
+	// (TUNE) correction parameter:  hit expectation 
+	double H = (double) total * 0.75;
 	double out_of_sync = (1 - misses / H);
 
 	double pause_time = configuration->period * out_of_sync;
@@ -102,8 +103,8 @@ int listen_for_bit(ConfigReceiver* configuration)
 			ADDR_PTR addr = (ADDR_PTR) *i;
 			CYCLES x = measure_one_block_access_time(addr);
 
-			// if(x > 1000)
-			// 	continue; 
+			if(x > 1000)
+				continue; 
 
 			access_count++; 
 
@@ -133,7 +134,7 @@ int listen_for_bit(ConfigReceiver* configuration)
 			time_correction(configuration, cache_miss, access_count);
 
 		// (TUNE) Percent of hits in seek mode to return 1.  Relax the threshold.  
-		if(cache_hit > ((double) access_count * 0.9))
+		if(cache_hit < ((double) access_count * 0.83))
 			return 1; 
 		else
 			return 0; 
@@ -143,7 +144,7 @@ int listen_for_bit(ConfigReceiver* configuration)
 
 	hit_ratio = (double) cache_hit / (double) access_count; 
 	// (TUNE) ratio of total 
-	if(hit_ratio > 0.5)
+	if(hit_ratio < 0.5)
 		return 1;
 	else
 		return 0; 
@@ -162,7 +163,7 @@ void parse_input_flags(ConfigReceiver* configuration, int argc, char** argv)
 {
     int option = 0;
 	string usage = "Usage: ./sender -d -p 170\n";
-	string help = "\t-d for debug mode.\n\t-p to specify a period in microseconds.\n";
+	string help = "\t-d for debug mode.\n\t-p to specify a period in microseconds.(must match with sender)\n";
 
     while ((option = getopt(argc, argv, "dp:")) != -1) {
         switch (option) {
@@ -188,15 +189,17 @@ void parse_input_flags(ConfigReceiver* configuration, int argc, char** argv)
 
 
 
-
 int main(int argc, char **argv)
 {
 	// setup 
 	ConfigReceiver configuration = ConfigReceiver();
-	configuration.debug_mode = true; 
+	configuration.debug_mode = false; 
 	configuration.period = PERIOD; 
-	configuration.decision_boundary = 160; 
+	configuration.decision_boundary = DECISION_BOUNDARY; 
 	configuration.mode = 0;
+	// maximum size of message is 128 chars.  8 bits per char.  
+	char* bitstring = (char*) malloc(8 * 128); 
+	int bitstring_size = 0; 
 
 	parse_input_flags(&configuration, argc, argv); 
 
@@ -213,36 +216,48 @@ int main(int argc, char **argv)
 
 
 	int bit = -1;
+	int consecutive_zeros = 0; 
+	int i; 
 
 	printf("Receiver now listening.\n");
 	bool listening = true;
 	while (listening) {
 
-
+		// Recognize initiate sequence & sync up with sender  
+		// Init sequence is 10011011 
+		// TODO clean up with loop 
 		bit = listen_for_bit(&configuration);
-
-		// Recognize initiate sequence & sync up with sender   
-		int bit = listen_for_bit(&configuration);
 
 		if(bit == 1)
 		{
 			configuration.mode = 1;
 			bit = listen_for_bit(&configuration);
-			if(bit == 1)
+			if(bit == 0)
 			{
 				bit = listen_for_bit(&configuration);
 				if(bit == 0)
 				{
 					bit = listen_for_bit(&configuration);
-					if(bit == 0)
+					if(bit == 1)
 					{
 						bit = listen_for_bit(&configuration);
 						if(bit == 1)
 						{
 							bit = listen_for_bit(&configuration);
-							if(bit == 1)
+							if(bit == 0)
 							{
-								cout << " Found the sequence " << endl;
+								bit = listen_for_bit(&configuration);
+								if(bit == 1)
+								{
+									bit = listen_for_bit(&configuration);
+									if(bit == 1)
+									{
+										configuration.mode = 2; 
+										if(configuration.debug_mode)
+											cout << " Found the sequence " << endl;
+									}
+								}
+
 							}
 						}
 					}
@@ -251,11 +266,60 @@ int main(int argc, char **argv)
 		}
 
 
+		// detected init sequence.  reading message 
+		if(configuration.mode == 2)
+		{
+
+			for(i=0; i<(128*8); i++)
+			{
+				bit = listen_for_bit(&configuration); 
+				bitstring_size++; 
+
+				// detect end of message (null terminator = 8 0 bits)
+				if(bit == 1)
+				{
+					strcat(bitstring, "1");
+					consecutive_zeros = 0;
+				}
+				if(bit == 0)
+				{
+					strcat(bitstring, "0");
+					consecutive_zeros++; 
+
+					if( (bitstring_size % 8) == 0)
+					{
+						if(consecutive_zeros == 8)
+						{
+							if(configuration.debug_mode)
+								cout << "End of message" << endl; 
+							bitstring[bitstring_size] = '\0';
+							break; 	
+						}else{
+							consecutive_zeros = 0;
+						}
+					}
+
+				}
+
+			}
+			
+			if(configuration.debug_mode)
+				cout << "bitstring: " << bitstring << endl; 
+
+			// decode the message 
+			char* payload;  
+			payload = convert_from_binary(bitstring, bitstring_size); 
+
+			cout << "messsage: " << payload << endl; 
+		}
+
 
 
 			
-
+		// Clean up run-state vars for next iteration 
 		configuration.mode = 0; 
+		bitstring[0] = '\0';
+		bitstring_size = 0; 
 	}
 
 	printf("Receiver finished.\n");

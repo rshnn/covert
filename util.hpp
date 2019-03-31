@@ -26,6 +26,7 @@ using namespace std;
 #define CYCLES uint32_t
 
 #define PERIOD 500
+#define DECISION_BOUNDARY 150
 
 
 // CONSTANTS FOR DRAMAMINE 
@@ -65,5 +66,7 @@ uint64_t RDTSC();
 uint64_t cache_set_index(ADDR_PTR addr);
 
 char* convert_to_binary(char* input);
+
+char* convert_from_binary(char* bitstring, int bitstring_size);
 
 #endif

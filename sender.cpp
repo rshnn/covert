@@ -118,7 +118,7 @@ void parse_input_flags(ConfigSender* configuration, int argc, char** argv)
 {
     int option = 0;
 	string usage = "Usage: ./sender -d -p 170\n";
-	string help = "\t-d for debug mode.\n\t-p to specify a period in microseconds.\n";
+	string help = "\t-d for debug mode.\n\t-p to specify a period in microseconds. (must match with receiver)\n";
 
     while ((option = getopt(argc, argv, "dp:")) != -1) {
         switch (option) {
@@ -151,7 +151,7 @@ int main(int argc, char **argv)
 	// setup 
 	clock_t begin, end; 
 	ConfigSender configuration = ConfigSender();
-	configuration.debug_mode = true; 
+	configuration.debug_mode = false; 
 	configuration.period = PERIOD; 
 
 
@@ -159,13 +159,14 @@ int main(int argc, char **argv)
 
 	build_eviction_list(&configuration); 
 	
-	if(configuration.debug_mode)
-		configuration.print_eviction_list(); 
+	// if(configuration.debug_mode)
+	// 	configuration.print_eviction_list(); 
 
 
 	bool sending = true;
 	while (sending) {
 		char text_buf[128];
+		int i; 
 		printf("Please type a message.\n");
 		fgets(text_buf, sizeof(text_buf), stdin);
 	
@@ -180,36 +181,28 @@ int main(int argc, char **argv)
         begin = clock();
 
 
-
-        // send an initiate sequence  110011
-        send_one(&configuration);
+        // send an initiate sequence  10011011
         send_one(&configuration);
         send_zero(&configuration);
         send_zero(&configuration);
         send_one(&configuration);
         send_one(&configuration);
+        send_zero(&configuration);
+        send_one(&configuration);
+        send_one(&configuration);
 
-
-
+        
         // send payload 
         size_t payload_length = strlen(binary_payload);
-        for(int i=0; i<payload_length; i++)
+        for(i=0; i<payload_length; i++)
         {
         	if(binary_payload[i] == '1')
         	{
         		// flush LLC
-        // 		if(configuration.debug_mode)
-	    			// cout << RDTSC() << " Sending 1." << endl;
         		send_one(&configuration);
-        		// if(configuration.debug_mode)
-	    			// cout <<  RDTSC()  << " Sent 1." << endl;
         	}else{
         		// do nothing 
-        // 		if(configuration.debug_mode)
-	    			// cout <<  RDTSC() << " Sending 0." << endl;
         		send_zero(&configuration);
-        		// if(configuration.debug_mode)
-        		// 	cout <<  RDTSC() << " Sent 0." << endl;
         	}
 
         } 
