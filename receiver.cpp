@@ -1,4 +1,4 @@
-
+#include <fstream>
 #include"util.hpp"
 
 class ConfigReceiver
@@ -9,6 +9,9 @@ class ConfigReceiver
 	list<ADDR_PTR> probe_list; 
 	char* buffer; 
 	int decision_boundary; 
+
+	// used for testing
+	list<CYCLES> probe_time;
 
 	// 0 = seeking   
 	// 1 = listening to init
@@ -103,6 +106,13 @@ int listen_for_bit(ConfigReceiver* configuration)
 			ADDR_PTR addr = (ADDR_PTR) *i;
 			CYCLES x = measure_one_block_access_time(addr);
 
+			// for debugging decision boundary 	
+			if(configuration->mode == 2)
+			{
+				configuration->probe_time.push_back(x);
+			}
+
+
 			if(x > 1000)
 				continue; 
 
@@ -130,11 +140,11 @@ int listen_for_bit(ConfigReceiver* configuration)
 	if(configuration->mode == 0)
 	{
 		// (TUNE) Percent of misses in seek mode to enact time_correction.  
-		if(cache_miss > (access_count*0.13))
+		if(cache_miss > (access_count*0.20))
 			time_correction(configuration, cache_miss, access_count);
 
 		// (TUNE) Percent of hits in seek mode to return 1.  Relax the threshold.  
-		if(cache_hit < ((double) access_count * 0.83))
+		if(cache_hit < ((double) access_count * 0.8))
 			return 1; 
 		else
 			return 0; 
@@ -151,6 +161,29 @@ int listen_for_bit(ConfigReceiver* configuration)
 
 } 
 
+
+
+void write_probe_times_to_file(ConfigReceiver* configuration)
+{
+	ofstream myfile("probes.txt");
+
+	list<CYCLES>::iterator i;
+
+
+	if (myfile.is_open())
+	{
+	
+		for(i=configuration->probe_time.begin(); 
+			i != configuration->probe_time.end(); 
+			i++)
+		{
+				myfile << *i << " " ;
+		}
+	    myfile.close();
+	}
+	else cout << "Unable to open file";
+
+}
 
 
 
@@ -311,8 +344,8 @@ int main(int argc, char **argv)
 			payload = convert_from_binary(bitstring, bitstring_size); 
 
 			cout << "messsage: " << payload << endl; 
+			write_probe_times_to_file(&configuration);
 		}
-
 
 
 			

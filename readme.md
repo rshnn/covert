@@ -58,3 +58,36 @@ LEVEL4_CACHE_LINESIZE              0
 
 
 do not put listeners into subroutines.  messes up timings 
+
+
+----------------
+
+Notes for readme.pdf
+
+A.  How to use
+
+B.  Description of how a covert channel is established 
+    physical layer; 
+        using L3 cache as covert channel 
+        sender will flush L3 cache for 1.  nothing for 0.
+        receiver will probe their L1.   
+
+
+    protocol stack: 
+
+C.  Which part2 was implemented 
+    + accomplished
+        * Speed
+        * Portability
+        * Portability++
+
+D.  Challenges 
+
++ syncing up sender and receiver 
+    * switched between clock() and cycles 
++ putting listeners into a another call stack messed up timings 
+
+
+E.  Feedback 
+
+

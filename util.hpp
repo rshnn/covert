@@ -30,7 +30,6 @@ using namespace std;
 
 
 // CONSTANTS FOR DRAMAMINE 
-
 const int CACHE_LINESIZE = 64;
 // This is the L1 cache for data only.  Does not include instructions 
 const int CACHE_L1_SIZE = 32768; 
