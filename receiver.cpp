@@ -107,10 +107,10 @@ int listen_for_bit(ConfigReceiver* configuration)
 			CYCLES x = measure_one_block_access_time(addr);
 
 			// for debugging decision boundary 	
-			if(configuration->mode == 2)
-			{
-				configuration->probe_time.push_back(x);
-			}
+			// if(configuration->mode == 2)
+			// {
+			// 	configuration->probe_time.push_back(x);
+			// }
 
 
 			if(x > 1000)
@@ -191,13 +191,15 @@ void write_probe_times_to_file(ConfigReceiver* configuration)
 	Parse command line input flags.  
 		-d for debug mode
 		-p [double] to specify a different period length (in microseconds) 
+		-d [double] to specify a different decision boundary (in CYCLES) 
 */
 void parse_input_flags(ConfigReceiver* configuration, int argc, char** argv)
 {
     int option = 0;
 	string usage = "Usage: ./sender -d -p 170\n";
-	string help = "\t-d for debug mode.\n\t-p to specify a period in microseconds.(must match with sender)\n";
-
+	string help = "\t-d for debug mode.\n";
+	help.append("\t-p to specify a period in microseconds.(must match with sender)\n");
+	help.append("\t-b to specify a decision boundary in cycles.\n");
     while ((option = getopt(argc, argv, "dp:")) != -1) {
         switch (option) {
             case 'd':
@@ -210,6 +212,11 @@ void parse_input_flags(ConfigReceiver* configuration, int argc, char** argv)
             	cout << "Setting period to " << configuration->period << endl;
                 break;
             
+            case 'b':
+                configuration->decision_boundary = atoi(optarg);
+            	cout << "Setting decision boundary to " << configuration->decision_boundary << endl;
+                break;
+
             case '?':
             	cout <<  usage + help << endl;
                 exit(1);

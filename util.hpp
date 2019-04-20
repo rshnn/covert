@@ -30,29 +30,29 @@ using namespace std;
 
 
 // CONSTANTS FOR DRAMAMINE 
-const int CACHE_LINESIZE = 64;
-// This is the L1 cache for data only.  Does not include instructions 
-const int CACHE_L1_SIZE = 32768; 
-const int CACHE_L1_ASSOC = 8;
-const int CACHE_L1_SETS = (CACHE_L1_SIZE / CACHE_LINESIZE) / CACHE_L1_ASSOC; //64
+// const int CACHE_LINESIZE = 64;
+// // This is the L1 cache for data only.  Does not include instructions 
+// const int CACHE_L1_SIZE = 32768; 
+// const int CACHE_L1_ASSOC = 8;
+// const int CACHE_L1_SETS = (CACHE_L1_SIZE / CACHE_LINESIZE) / CACHE_L1_ASSOC; //64
 
-const int CACHE_L3_SIZE = 4194304; 
-const int CACHE_L3_ASSOC = 16;
-const int CACHE_L3_SETS = (CACHE_L3_SIZE / CACHE_LINESIZE) / CACHE_L3_ASSOC;
-const int CACHE_L3_SLICES = 4; 
+// const int CACHE_L3_SIZE = 4194304; 
+// const int CACHE_L3_ASSOC = 16;
+// const int CACHE_L3_SETS = (CACHE_L3_SIZE / CACHE_LINESIZE) / CACHE_L3_ASSOC;
+// const int CACHE_L3_SLICES = 4; 
 
 
 // CONSTANTS FOR PROF2.CS.RUTGERS.EDU
-// const int CACHE_LINESIZE = 64;
+const int CACHE_LINESIZE = 64;
 
-// const int CACHE_L1_SIZE = 32768; 
-// const int CACHE_L1_ASSOC = 8;
-// const int CACHE_L1_SETS = (CACHE_L1_SIZE / CACHE_LINESIZE) / CACHE_L1_ASSOC
+const int CACHE_L1_SIZE = 32768; 
+const int CACHE_L1_ASSOC = 8;
+const int CACHE_L1_SETS = (CACHE_L1_SIZE / CACHE_LINESIZE) / CACHE_L1_ASSOC
 
-// const int CACHE_L3_SIZE = 8388608;   // 8MB
-// const int CACHE_L3_ASSOC = 16;
-// const int CACHE_L3_SETS = (CACHE_L3_SIZE / CACHE_LINESIZE) / CACHE_L3_ASSOC
-// const int CACHE_L3_SLICES = 4; 
+const int CACHE_L3_SIZE = 8388608;   // 8MB
+const int CACHE_L3_ASSOC = 16;
+const int CACHE_L3_SETS = (CACHE_L3_SIZE / CACHE_LINESIZE) / CACHE_L3_ASSOC
+const int CACHE_L3_SLICES = 4; 
 
 
 
