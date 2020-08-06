@@ -33,6 +33,6 @@ The threshold timing for recording 0 or 1 bits was experimentally determined.  T
 
 The plot below shows the timings of probing the LLC layer when flushed and not flushed.  From it, we can determine what a reasonable threshold could be.  
 
-![timings](images/probe-timings.png)
+![timings](images/probe-time.png)
 
 
